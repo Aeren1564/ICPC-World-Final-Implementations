@@ -15,14 +15,19 @@ int main(){
 		list<int> order;
 		map<int, array<int, 2>> event;
 		for(auto i = 0; i < n; ++ i){
+			assert(!event.contains(a[i][0][0]));
+			assert(!event.contains(a[i][1][0]));
 			event[a[i][0][0]] = {i, 0};
 			event[a[i][1][0]] = {i, 1};
 		}
 		int sweepline;
 		auto cmp = [&](int i, int j)->bool{
 			return
-				(__int128_t(1) * a[i][0][1] * (a[i][1][0] - sweepline) + __int128_t(1) * a[i][1][1] * (sweepline - a[i][0][0])) * (a[j][1][0] - a[j][0][0]) <
-				(__int128_t(1) * a[j][0][1] * (a[j][1][0] - sweepline) + __int128_t(1) * a[j][1][1] * (sweepline - a[j][0][0])) * (a[i][1][0] - a[i][0][0]);
+				(__int128_t(1) * a[i][0][1] * (a[i][1][0] - sweepline) + __int128_t(1) * a[i][1][1] * (sweepline - a[i][0][0])) *
+				(a[j][1][0] - a[j][0][0])
+				<
+				(__int128_t(1) * a[j][0][1] * (a[j][1][0] - sweepline) + __int128_t(1) * a[j][1][1] * (sweepline - a[j][0][0])) *
+				(a[i][1][0] - a[i][0][0]);
 		};
 		set<int, decltype(cmp)> state(cmp);
 		vector<list<int>::iterator> pos(n);
@@ -50,7 +55,8 @@ int main(){
 		}
 		return res;
 	};
-	auto __solve_dp = [](int n, int th_low, int th_high, const vector<array<int, 3>> &order)->int{const int inf = numeric_limits<int>::max() - 3;
+	auto __solve_dp = [](int n, int th_low, int th_high, const vector<array<int, 3>> &order)->int{
+		const int inf = numeric_limits<int>::max() - 3;
 		int opt = 0;
 		// pos, delta
 		map<int, int> left{{-1, -1}, {th_low, -inf}};
@@ -114,7 +120,6 @@ int main(){
 				else{
 					auto it = right.lower_bound(r);
 					if(prev(it)->first <= l){
-						// cerr << "Case 5\n";
 						continue;
 					}
 					-- prev(it)->second;
@@ -140,23 +145,22 @@ int main(){
 				}
 			}
 		}
-		if(th_low < right.begin()->first && prev(left.end())->first < th_high){
-		}
-		else if(th_high <= prev(left.end())->first){
+		auto res = opt;
+		if(th_high <= prev(left.end())->first){
 			auto it = left.end();
 			while(th_high <= prev(it)->first){
+				res -= prev(it)->second;
 				-- it;
-				++ opt;
 			}
 		}
-		else{
+		else if(right.begin()->first <= th_low){
 			auto it = right.begin();
 			while(it->first <= th_low){
+				res += it->second;
 				++ it;
-				++ opt;
 			};
 		}
-		return opt;
+		return res;
 	};
 	auto __solve = [&]()->void{
 		int th_low, th_high, n;
