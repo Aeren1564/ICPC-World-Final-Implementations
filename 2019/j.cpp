@@ -13,45 +13,63 @@ int main(){
 	cin.exceptions(ios::badbit | ios::failbit);
 	int n, h;
 	cin >> n >> h;
-	vector<vector<int>> a(n, vector<int>(h));
-	map<int, vector<int>> event;
+	vector score(n, vector<int>(h));
+	vector<long long> sum(n);
+	vector temp(n, vector<array<int, 2>>(h));
 	for(auto i = 0; i < n; ++ i){
+		copy_n(istream_iterator<int>(cin), h, score[i].begin());
+		sum[i] = accumulate(score[i].begin(), score[i].end(), 0LL);
+		ranges::sort(score[i]);
 		for(auto j = 0; j < h; ++ j){
-			cin >> a[i][j];
-			event[a[i][j]].push_back(i);
+			temp[i][j] = {score[i][j], i};
 		}
-		ranges::sort(a[i]);
 	}
-	vector<int> rank(n, n);
-	vector<int> slope(n);
-	vector<long long> coef(n);
 	for(auto i = 0; i < n; ++ i){
-		coef[i] = accumulate(a[i].begin(), a[i].end(), 0LL);
-	}
-	for(auto [x, e]: event | ranges::views::reverse){
-		for(auto i: e){
-			++ slope[i];
-			coef[i] -= x;
+		static vector<array<int, 2>> delta;
+		delta.clear();
+		for(auto j = 0; j < n; ++ j){
+			if(i == j){
+				continue;
+			}
+			static vector<array<int, 2>> event;
+			event.clear();
+			ranges::merge(temp[i], temp[j], back_inserter(event));
+			long long coef = sum[i] - sum[j];
+			int slope = 0;
+			for(auto t = (int)event.size() - 2; t >= 0; -- t){
+				if(event[t + 1][1] == i){
+					++ slope;
+					coef -= event[t + 1][0];
+				}
+				else{
+					-- slope;
+					coef += event[t + 1][0];
+				}
+				if((coef + 1LL * slope * event[t][0] >= 0) != (coef + 1LL * slope * event[t + 1][0] >= 0)){
+					if(coef + 1LL * slope * event[t][0] >= 0){
+						assert(slope < 0);
+						delta.push_back({coef / -slope + 1, -1});
+					}
+					else{
+						assert(slope > 0);
+						delta.push_back({(-coef + slope - 1) / slope, 1});
+					}
+				}
+			}
 		}
-		static vector<long long> score(n);
-		for(auto i = 0; i < n; ++ i){
-			score[i] = coef[i] + slope[i] * x;
-		}
-		static vector<int> order(n);
-		iota(order.begin(), order.end(), 0);
-		ranges::sort(order, [&](int i, int j){ return score[i] < score[j]; });
-		for(auto l = 0; l < n; ){
+		ranges::sort(delta);
+		int res = n, rank = n;
+		for(auto l = 0; l < (int)delta.size(); ){
 			int r = l;
-			while(r < n && score[order[l]] == score[order[r]]){
+			while(r < (int)delta.size() && delta[l][0] == delta[r][0]){
+				rank += delta[r][1];
 				++ r;
 			}
-			for(auto i = l; i < r; ++ i){
-				rank[order[i]] = min(rank[order[i]], r);
-			}
+			res = min(res, rank);
 			l = r;
 		}
+		cout << res << "\n";
 	}
-	ranges::copy(rank, ostream_iterator<int>(cout, "\n"));
 	return 0;
 }
 
