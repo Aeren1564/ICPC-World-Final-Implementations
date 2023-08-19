@@ -40,7 +40,6 @@ int main(){
 		dfs(dfs, s, -1);
 	}
 	vector<int> depth(n), pv(n, -1), pw(n), order, pos(n, -1), end(n, -1);
-	vector lca(n, vector<int>(n));
 	{
 		auto dfs = [&](auto self, int u, int _pv)->void{
 			pos[u] = (int)order.size();
@@ -57,18 +56,6 @@ int main(){
 			end[u] = (int)order.size();
 		};
 		dfs(dfs, 0, -1);
-		for(auto u = 0; u < n; ++ u){
-			for(auto [v, w]: adj[u]){
-				if(v == pv[u]){
-					continue;
-				}
-				for(auto l = pos[u]; l < pos[v]; ++ l){
-					for(auto r = pos[v]; r < end[v]; ++ r){
-						lca[order[l]][order[r]] = lca[order[r]][order[l]] = u;
-					}
-				}
-			}
-		}
 	}
 	for(auto qi = 0; qi < qn; ++ qi){
 		int s, k, t;
@@ -94,36 +81,43 @@ int main(){
 					was[u] = qi;
 				}
 			};
-			while(true){
-				int maxd = max(max(depth[s], depth[k]), depth[t]);
-				if(depth[s] == maxd){
+			if(depth[s] < depth[k]){
+				swap(s, k);
+			}
+			if(depth[s] < depth[t]){
+				swap(s, t);
+			}
+			if(depth[k] < depth[t]){
+				swap(k, t);
+			}
+			while(depth[s] > depth[k]){
+				push_up(s);
+			}
+			while(s != k && depth[s] > depth[t]){
+				push_up(s);
+				push_up(k);
+			}
+			if(depth[s] > depth[t]){
+				assert(s == k);
+				while(depth[s] > depth[t]){
 					push_up(s);
 				}
-				if(depth[k] == maxd){
-					push_up(k);
-				}
-				if(depth[t] == maxd){
-					push_up(t);
-				}
-				if(s == k || k == t || t == s){
-					if(s == k){
-						swap(k, t);
-					}
-					if(depth[s] < depth[k]){
-						swap(s, k);
-					}
-					while(depth[s] > depth[k]){
-						push_up(s);
-					}
-					while(s != k){
-						push_up(s);
-						push_up(k);
-					}
-					break;
-				}
+				k = s;
 			}
-			for(auto i = 0; i < qend; ++ i){
-				dist2[q[i]] = tot;
+			while(s != k && k != t && t != s){
+				push_up(s);
+				push_up(k);
+				push_up(t);
+			}
+			if(s == k){
+				swap(k, t);
+			}
+			while(s != k){
+				push_up(s);
+				push_up(k);
+			}
+			for(auto it = 0; it < qend; ++ it){
+				dist2[q[it]] = tot;
 			}
 			s = _s, k = _k, t = _t;
 		}
